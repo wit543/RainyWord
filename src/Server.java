@@ -60,6 +60,7 @@ public class Server {
 		public void run() {
 
 			try {
+				System.out.print("hello");
 				java.io.OutputStream os = socket.getOutputStream();
 				oos = new ObjectOutputStream(os);
 				InputStream is = socket.getInputStream();

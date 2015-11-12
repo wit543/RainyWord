@@ -3,8 +3,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
-import java.util.ArrayList;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,7 +12,7 @@ import java.util.Map;
  * Created by WIT-PC on 11/11/2558.
  */
 public class ServerP2P {
-    private Map<String,ClientThead> clientList = new HashMap<String,ClientThead>();
+    private Map<String, ClientThread> clientList = new HashMap<String, ClientThread>();
     private int portNumber = 12345;
     private String hostName = "";
     private static ServerP2P serverP2P;
@@ -28,7 +28,11 @@ public class ServerP2P {
             while (true) {
                 try{
                     Socket socket = serverSocket.accept();
+                    ClientThread clientThread = new ClientThread(socket);
+                    clientThread.start();
+                    clientList.put(String.valueOf(socket.getLocalPort()),clientThread);
 
+                    System.out.print("create Socket"+clientThread.toString());
                 }
                 catch (IOException e){
                     e.printStackTrace();
@@ -37,14 +41,14 @@ public class ServerP2P {
         }
     }
 
-    private class ClientThead extends Thread{
+    private class ClientThread extends Thread{
         private Socket socket;
         private PrintWriter out;
         private BufferedReader in;
         private String input;
         private String output;
         private String name;
-        ClientThead(Socket socket){
+        ClientThread(Socket socket){
             this.socket=socket;
             try {
                 out = new PrintWriter(socket.getOutputStream(), true);
@@ -52,13 +56,28 @@ public class ServerP2P {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            clientList.put(String.valueOf(socket.getLocalPort()),this);
+
         }
         private String processInput(String s){
             String toClient = "";
             if(s.startsWith("[name]")){
                 this.name = s.substring(5);
             }
+            if(s.equals("[get]List")){
+                out.print("[list]"+Arrays.toString(clientList.keySet().toArray()));
+            }
+            if(s.startsWith("[connect]")){
+                ClientThread clientThread =clientList.get(s.substring(7));
+                if(clientThread!=null){
+                    out.print("[connect]["+clientThread.socket.getInetAddress()+"]");
+                    clientThread.out.print("[connect]["+this.socket.getInetAddress()+"]");
+                }
+                else{
+                    out.print("[error]not found");
+                }
+            }
+            System.out.println("Client: "+s);
+
             return toClient;
         }
         public void run(){
@@ -75,7 +94,7 @@ public class ServerP2P {
         }
         public String getClientName(){
             if(name==null){
-                output="[get]name";
+                out.println("[get]name");
             }
             return name;
         }
@@ -87,6 +106,9 @@ public class ServerP2P {
             e.printStackTrace();
         }
         clientHandler = new ClientHandler(serverSocket);
+
+    }
+    public void start(){
         clientHandler.start();
     }
     public static ServerP2P getInstance(){
@@ -94,5 +116,9 @@ public class ServerP2P {
             serverP2P = new ServerP2P();
         }
         return serverP2P;
+    }
+    public static void main(String[] arga){
+        ServerP2P serverP2P = new ServerP2P();
+        serverP2P.start();
     }
 }
