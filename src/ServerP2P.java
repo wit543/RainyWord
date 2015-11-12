@@ -12,6 +12,9 @@ import java.util.Map;
  * Created by WIT-PC on 11/11/2558.
  */
 public class ServerP2P {
+    /**
+     * A Map of Client which connect to this server.
+     */
     private Map<String, ClientThread> clientList = new HashMap<String, ClientThread>();
     private int portNumber = 12345;
     private String hostName = "";
@@ -71,6 +74,8 @@ public class ServerP2P {
                 if(clientThread!=null){
                     out.print("[connect]["+clientThread.socket.getInetAddress()+"]");
                     clientThread.out.print("[connect]["+this.socket.getInetAddress()+"]");
+                    clientList.remove(s.substring(7));
+                    clientList.remove(name);
                 }
                 else{
                     out.print("[error]not found");
